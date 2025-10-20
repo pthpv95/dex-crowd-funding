@@ -1,0 +1,39 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_28-a9add0cccef2760dfc69f2d7761e2c2c11c8c226",
+  "solcVersion": "0.8.28",
+  "solcLongVersion": "0.8.28+commit.7893614a",
+  "userSourceNameMap": {
+    "contracts/Crowfunding.sol": "project/contracts/Crowfunding.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "cancun",
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode",
+            "evm.deployedBytecode",
+            "evm.methodIdentifiers",
+            "metadata"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/Crowfunding.sol": {
+        "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.28;\n\ncontract Crowdfunding {\n    struct Campaign {\n        address payable creator;\n        uint256 goal;\n        uint256 deadline;\n        uint256 amountRaised;\n        mapping(address => uint256) donations;\n        address[] donors;\n        bool withdrawn;\n    }\n\n    uint256 public campaignCount;\n    mapping(uint256 => Campaign) campaigns;\n\n    event CampaignCreated(\n        uint256 indexed campaignId,\n        address indexed creator,\n        uint256 goal,\n        uint256 deadline\n    );\n\n    function createCampaign(\n        uint256 _goal,\n        uint256 _durationInDays\n    ) external returns (uint256) {\n        require(_goal > 0, \"Goal must be greater than 0\");\n        require(_durationInDays > 0, \"Duration must be greater than 0\");\n\n        uint256 campaignId = campaignCount++;\n        Campaign storage newCampaign = campaigns[campaignId];\n        newCampaign.creator = payable(msg.sender);\n        newCampaign.goal = _goal;\n        newCampaign.deadline = block.timestamp + (_durationInDays * 1 days);\n        newCampaign.amountRaised = 0;\n        newCampaign.withdrawn = false;\n        emit CampaignCreated(\n            campaignId,\n            msg.sender,\n            _goal,\n            newCampaign.deadline\n        );\n        return campaignId;\n    }\n\n    function getCampaign(\n        uint256 campaignId\n    )\n        external\n        view\n        returns (\n            address creator,\n            uint256 goal,\n            uint256 deadline,\n            uint256 amountRaised,\n            bool withdrawn,\n            bool isActive,\n            bool goalReached\n        )\n    {\n        Campaign storage campaign = campaigns[campaignId];\n        return (\n            campaign.creator,\n            campaign.goal,\n            campaign.deadline,\n            campaign.amountRaised,\n            campaign.withdrawn,\n            block.timestamp < campaign.deadline,\n            campaign.amountRaised >= campaign.goal\n        );\n    }\n}\n"
+      }
+    }
+  }
+}

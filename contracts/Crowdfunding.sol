@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-contract Crowfunding {
+contract Crowdfunding {
     struct Campaign {
         address payable creator;
         uint256 goal;
@@ -28,6 +28,7 @@ contract Crowfunding {
     ) external returns (uint256) {
         require(_goal > 0, "Goal must be greater than 0");
         require(_durationInDays > 0, "Duration must be greater than 0");
+
         uint256 campaignId = campaignCount++;
         Campaign storage newCampaign = campaigns[campaignId];
         newCampaign.creator = payable(msg.sender);
@@ -37,10 +38,37 @@ contract Crowfunding {
         newCampaign.withdrawn = false;
         emit CampaignCreated(
             campaignId,
-            newCampaign.creator,
+            msg.sender,
             _goal,
             newCampaign.deadline
         );
         return campaignId;
+    }
+
+    function getCampaign(
+        uint256 campaignId
+    )
+        external
+        view
+        returns (
+            address creator,
+            uint256 goal,
+            uint256 deadline,
+            uint256 amountRaised,
+            bool withdrawn,
+            bool isActive,
+            bool goalReached
+        )
+    {
+        Campaign storage campaign = campaigns[campaignId];
+        return (
+            campaign.creator,
+            campaign.goal,
+            campaign.deadline,
+            campaign.amountRaised,
+            campaign.withdrawn,
+            block.timestamp < campaign.deadline,
+            campaign.amountRaised >= campaign.goal
+        );
     }
 }
