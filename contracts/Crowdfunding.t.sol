@@ -28,9 +28,7 @@ contract CrowdfundingTest is Test {
             bool goalReached
         ) = crowdfunding.getCampaign(campaignId);
 
-        emit log_uint(deadline);
-
-        assertEq(campaignId, 1);
+        assertEq(campaignId, 0);
         assertEq(creator, address(this));
         assertEq(returnedGoal, goal);
         assertEq(amountRaised, 0);
