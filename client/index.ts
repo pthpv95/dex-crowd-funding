@@ -1,16 +1,13 @@
-import { createPublicClient, http, parseAbi } from "viem";
+import { createPublicClient, http } from "viem";
 import { sepolia } from "viem/chains";
+import crowdfundingAbiJson from "./abis/crowdfunding.json";
 
 // Contract configuration
 const CONTRACT_ADDRESS = "0x382716375F0B879c2e0a195EE7c40615307Ee740" as const;
 const RPC_URL = "https://sepolia.gateway.tenderly.co";
 
-// Contract ABI - only the functions we need
-const CROWDFUNDING_ABI = parseAbi([
-  "function getCampaign(uint256 campaignId) external view returns (address creator, uint256 goal, uint256 deadline, uint256 amountRaised, bool withdrawn, bool isActive, bool goalReached)",
-  "function campaignCount() external view returns (uint256)",
-  "function getAllDonors(uint256 campaignId) external view returns (address[] memory)",
-]);
+// Contract ABI from JSON file
+const CROWDFUNDING_ABI = crowdfundingAbiJson.abi;
 
 // Campaign data type
 export interface CampaignData {
@@ -40,12 +37,12 @@ export async function getCampaign(campaignId: number): Promise<CampaignData> {
       throw new Error("Campaign ID must be a non-negative number");
     }
 
-    const result = await publicClient.readContract({
+    const result = (await publicClient.readContract({
       address: CONTRACT_ADDRESS,
       abi: CROWDFUNDING_ABI,
       functionName: "getCampaign",
       args: [BigInt(campaignId)],
-    });
+    })) as [string, bigint, bigint, bigint, boolean, boolean, boolean];
 
     return {
       creator: result[0],
@@ -70,11 +67,11 @@ export async function getCampaign(campaignId: number): Promise<CampaignData> {
  */
 export async function getCampaignCount(): Promise<number> {
   try {
-    const count = await publicClient.readContract({
+    const count = (await publicClient.readContract({
       address: CONTRACT_ADDRESS,
       abi: CROWDFUNDING_ABI,
       functionName: "campaignCount",
-    });
+    })) as bigint;
     return Number(count);
   } catch (error) {
     if (error instanceof Error) {
@@ -95,12 +92,12 @@ export async function getAllDonors(campaignId: number): Promise<string[]> {
       throw new Error("Campaign ID must be a non-negative number");
     }
 
-    const donors = await publicClient.readContract({
+    const donors = (await publicClient.readContract({
       address: CONTRACT_ADDRESS,
       abi: CROWDFUNDING_ABI,
       functionName: "getAllDonors",
       args: [BigInt(campaignId)],
-    });
+    })) as readonly string[];
 
     return [...donors];
   } catch (error) {
@@ -113,15 +110,4 @@ export async function getAllDonors(campaignId: number): Promise<string[]> {
       `Failed to get donors for campaign ${campaignId}: Unknown error`
     );
   }
-}
-
-// Prevent direct execution from terminal
-if (import.meta.url === `file://${process.argv[1]}`) {
-  console.error(
-    "This module is not meant to be run directly from the terminal."
-  );
-  console.error(
-    "Import and use the exported functions in your application instead."
-  );
-  process.exit(1);
 }
