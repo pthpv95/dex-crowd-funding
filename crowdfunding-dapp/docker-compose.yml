@@ -1,0 +1,11 @@
+version: "3.8"
+
+services:
+  otterscan:
+    image: otterscan/otterscan:latest
+    ports:
+      - "5100:80"
+    environment:
+      - ERIGON_URL=http://host.docker.internal:8545
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

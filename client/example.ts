@@ -1,4 +1,9 @@
-import { getCampaign, getCampaignCount, getAllDonors } from "./index.js";
+import {
+  getCampaign,
+  getCampaignCount,
+  getAllDonors,
+  createCampaign,
+} from "./index.js";
 
 async function example() {
   try {
@@ -29,4 +34,22 @@ async function example() {
   }
 }
 
-example();
+// example();
+
+async function test() {
+  const campaignId = await createCampaign(
+    BigInt(1000000000000000000), // 1 ETH
+    BigInt(10) // 10 days
+  );
+  console.log("Campaign created with ID:", campaignId);
+  const campaign = await getCampaign(campaignId);
+  console.log("Campaign data:", {
+    creator: campaign.creator,
+    goal: campaign.goal.toString(),
+    deadline: new Date(Number(campaign.deadline) * 1000).toISOString(),
+    amountRaised: campaign.amountRaised.toString(),
+    withdrawn: campaign.withdrawn,
+  });
+}
+
+test();

@@ -1,9 +1,10 @@
-import { createPublicClient, http } from "viem";
+import { createPublicClient, createWalletClient, http } from "viem";
 import { sepolia } from "viem/chains";
 import crowdfundingAbiJson from "./abis/crowdfunding.json";
+import { privateKeyToAccount } from "viem/accounts";
 
 // Contract configuration
-const CONTRACT_ADDRESS = "0x382716375F0B879c2e0a195EE7c40615307Ee740" as const;
+const CONTRACT_ADDRESS = "0xA38cF6B5C5D47cF31aB5d0eA399EBb1132B0f5a3" as const;
 const RPC_URL = "https://sepolia.gateway.tenderly.co";
 
 // Contract ABI from JSON file
@@ -109,5 +110,69 @@ export async function getAllDonors(campaignId: number): Promise<string[]> {
     throw new Error(
       `Failed to get donors for campaign ${campaignId}: Unknown error`
     );
+  }
+}
+/**
+ * Create a new crowdfunding campaign
+ * @param goal - Campaign goal amount in wei
+ * @param durationInDays - Campaign duration in days
+ * @param privateKey - Private key of the account creating the campaign (with 0x prefix)
+ * @returns Promise<number> - The ID of the newly created campaign
+ */
+export async function createCampaign(
+  goal: bigint,
+  durationInDays: bigint
+): Promise<number> {
+  try {
+    if (goal <= 0n) {
+      throw new Error("Goal must be greater than 0");
+    }
+    if (durationInDays <= 0n) {
+      throw new Error("Duration must be greater than 0");
+    }
+
+    if (!process.env.PRIVATE_KEY) {
+      throw new Error("PRIVATE_KEY is not set");
+    }
+
+    // Create account from private key
+    const account = privateKeyToAccount(
+      process.env.PRIVATE_KEY! as `0x${string}`
+    );
+
+    // Create wallet client for writing transactions
+    const walletClient = createWalletClient({
+      account,
+      chain: sepolia,
+      transport: http(RPC_URL),
+    });
+
+    // Call createCampaign function
+    const hash = await walletClient.writeContract({
+      address: CONTRACT_ADDRESS,
+      abi: CROWDFUNDING_ABI,
+      functionName: "createCampaign",
+      args: [goal, durationInDays],
+    });
+
+    console.log("Transaction hash:", hash);
+
+    // Wait for transaction confirmation
+    const receipt = await publicClient.waitForTransactionReceipt({ hash });
+    console.log("Transaction confirmed in block:", receipt.blockNumber);
+
+    // Extract campaign ID from the CampaignCreated event
+    const log = receipt.logs[0];
+    if (log && log.topics[1]) {
+      const campaignId = BigInt(log.topics[1]);
+      return Number(campaignId);
+    }
+
+    throw new Error("Campaign ID not found in transaction logs");
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`Failed to create campaign: ${error.message}`);
+    }
+    throw new Error("Failed to create campaign: Unknown error");
   }
 }
