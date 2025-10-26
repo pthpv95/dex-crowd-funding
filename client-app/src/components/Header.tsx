@@ -1,25 +1,17 @@
 import { Link } from "@tanstack/react-router";
-import { useAccount, useConnect, useDisconnect, useSignMessage } from "wagmi";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { verifyMessage } from "viem";
+import { useAccount, useConnect, useDisconnect, useSignMessage } from "wagmi";
 
 export default function Header() {
   const { address } = useAccount();
-  const { connectors, connect } = useConnect();
+  const { connectors, connectAsync } = useConnect();
   const { disconnect } = useDisconnect();
   const { signMessageAsync } = useSignMessage();
   const [isVerified, setIsVerified] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
 
-  useEffect(() => {
-    if (address && !isVerified) {
-      handleVerifyMessage();
-    }
-  }, [address]);
-
-  const handleVerifyMessage = async () => {
-    if (!address) return;
-
+  const handleVerifyMessage = async (connectedAddress: `0x${string}`) => {
     try {
       setIsVerifying(true);
       const message = `Welcome to CrowdFund!\n\nPlease sign this message to verify your wallet ownership.\n\nWallet: ${address}\nTimestamp: ${new Date().toISOString()}`;
@@ -28,7 +20,7 @@ export default function Header() {
       console.log("🚀 ~ handleVerifyMessage ~ signature:", signature);
 
       const isValid = await verifyMessage({
-        address,
+        address: connectedAddress,
         message,
         signature,
       });
@@ -41,6 +33,7 @@ export default function Header() {
         disconnect();
       }
     } catch (error) {
+      console.log("🚀 ~ handleVerifyMessage ~ error:", error);
       console.error("Error verifying message:", error);
       disconnect();
     } finally {
@@ -116,7 +109,10 @@ export default function Header() {
                 {connectors.map((connector) => (
                   <button
                     key={connector.uid}
-                    onClick={() => connect({ connector })}
+                    onClick={async () => {
+                      const result = await connectAsync({ connector });
+                      handleVerifyMessage(result.accounts[0]);
+                    }}
                     className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors"
                   >
                     Connect Wallet

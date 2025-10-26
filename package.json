@@ -7,6 +7,11 @@
     "typescript": "~5.8.0",
     "viem": "^2.38.3"
   },
+  "scripts": {
+    "build": "tsc",
+    "start:fe": "cd client-app && npm run dev",
+    "dev": "tsc && node dist/index.js"
+  },
   "dependencies": {
     "dotenv": "^17.2.3"
   }
