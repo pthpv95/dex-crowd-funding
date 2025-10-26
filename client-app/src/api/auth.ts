@@ -1,4 +1,5 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const isServer = typeof window === "undefined";
+const API_URL = isServer ? process.env.API_URL : import.meta.env.VITE_API_URL;
 
 export interface LoginRequest {
   walletAddress: string;
@@ -21,14 +22,25 @@ export interface ProfileResponse {
   user: User;
 }
 
+interface ApiOptions {
+  cookie?: string;
+}
+
 export const authApi = {
-  login: async (data: LoginRequest): Promise<LoginResponse> => {
+  login: async (data: LoginRequest, options?: ApiOptions): Promise<LoginResponse> => {
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+    };
+
+    // On server, forward the cookie header
+    if (options?.cookie) {
+      headers.Cookie = options.cookie;
+    }
+
     const response = await fetch(`${API_URL}/auth/login`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
+      headers,
+      credentials: isServer ? undefined : "include",
       body: JSON.stringify(data),
     });
 
@@ -40,10 +52,17 @@ export const authApi = {
     return response.json();
   },
 
-  logout: async (): Promise<{ message: string }> => {
+  logout: async (options?: ApiOptions): Promise<{ message: string }> => {
+    const headers: HeadersInit = {};
+
+    if (options?.cookie) {
+      headers.Cookie = options.cookie;
+    }
+
     const response = await fetch(`${API_URL}/auth/logout`, {
       method: "POST",
-      credentials: "include",
+      headers,
+      credentials: isServer ? undefined : "include",
     });
 
     if (!response.ok) {
@@ -53,9 +72,16 @@ export const authApi = {
     return response.json();
   },
 
-  getProfile: async (): Promise<ProfileResponse> => {
+  getProfile: async (options?: ApiOptions): Promise<ProfileResponse> => {
+    const headers: HeadersInit = {};
+
+    if (options?.cookie) {
+      headers.Cookie = options.cookie;
+    }
+
     const response = await fetch(`${API_URL}/auth/profile`, {
-      credentials: "include",
+      headers,
+      credentials: isServer ? undefined : "include",
     });
 
     if (!response.ok) {
@@ -65,10 +91,17 @@ export const authApi = {
     return response.json();
   },
 
-  refresh: async (): Promise<LoginResponse> => {
+  refresh: async (options?: ApiOptions): Promise<LoginResponse> => {
+    const headers: HeadersInit = {};
+
+    if (options?.cookie) {
+      headers.Cookie = options.cookie;
+    }
+
     const response = await fetch(`${API_URL}/auth/refresh`, {
       method: "POST",
-      credentials: "include",
+      headers,
+      credentials: isServer ? undefined : "include",
     });
 
     if (!response.ok) {
