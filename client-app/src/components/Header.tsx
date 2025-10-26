@@ -1,43 +1,53 @@
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
-import { verifyMessage } from "viem";
 import { useAccount, useConnect, useDisconnect, useSignMessage } from "wagmi";
+import { useLogin, useLogout, useProfile } from "../hooks/auth";
 
 export default function Header() {
   const { address } = useAccount();
   const { connectors, connectAsync } = useConnect();
   const { disconnect } = useDisconnect();
   const { signMessageAsync } = useSignMessage();
-  const [isVerified, setIsVerified] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
+
+  // TanStack Query hooks
+  const { data: profileData, isLoading: isLoadingProfile } = useProfile(
+    !!address,
+  );
+  const loginMutation = useLogin();
+  const logoutMutation = useLogout();
+
+  const isVerified = !!profileData?.user;
+  const isVerifying = loginMutation.isPending || isLoadingProfile;
 
   const handleVerifyMessage = async (connectedAddress: `0x${string}`) => {
     try {
-      setIsVerifying(true);
-      const message = `Welcome to CrowdFund!\n\nPlease sign this message to verify your wallet ownership.\n\nWallet: ${address}\nTimestamp: ${new Date().toISOString()}`;
+      const message = `Welcome to CrowdFund!\n\nPlease sign this message to verify your wallet ownership.\n\nWallet: ${connectedAddress}\nTimestamp: ${new Date().toISOString()}`;
 
       const signature = await signMessageAsync({ message });
       console.log("🚀 ~ handleVerifyMessage ~ signature:", signature);
 
-      const isValid = await verifyMessage({
-        address: connectedAddress,
-        message,
+      // Call backend API to verify signature using TanStack Query
+      await loginMutation.mutateAsync({
+        walletAddress: connectedAddress,
         signature,
+        message,
       });
 
-      if (isValid) {
-        setIsVerified(true);
-        console.log("Wallet verified successfully");
-      } else {
-        console.error("Signature verification failed");
-        disconnect();
-      }
+      console.log("Login successful");
     } catch (error) {
       console.log("🚀 ~ handleVerifyMessage ~ error:", error);
       console.error("Error verifying message:", error);
       disconnect();
-    } finally {
-      setIsVerifying(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logoutMutation.mutateAsync();
+      disconnect();
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Still disconnect on error
+      disconnect();
     }
   };
 
@@ -94,10 +104,7 @@ export default function Header() {
                   </p>
                 </div>
                 <button
-                  onClick={() => {
-                    setIsVerified(false);
-                    disconnect();
-                  }}
+                  onClick={handleLogout}
                   className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors"
                   disabled={isVerifying}
                 >
