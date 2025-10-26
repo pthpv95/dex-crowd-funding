@@ -1,0 +1,30 @@
+{
+  "name": "crowdfunding-dapp",
+  "version": "1.0.0",
+  "description": "Decentralized crowdfunding platform on EVM chains",
+  "main": "index.js",
+  "scripts": {
+    "test": "hardhat test",
+    "deploy": "hardhat run scripts/deploy.js",
+    "upgrade": "hardhat run scripts/upgrade.js",
+    "compile": "hardhat compile",
+    "node": "hardhat node"
+  },
+  "keywords": [
+    "blockchain",
+    "crowdfunding",
+    "solidity",
+    "hardhat"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@openzeppelin/hardhat-upgrades": "^3.0.0",
+    "hardhat": "^2.19.0"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts-upgradeable": "^5.0.0",
+    "dotenv": "^17.2.3"
+  }
+}
