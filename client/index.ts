@@ -21,6 +21,16 @@ export interface CampaignData {
   goalReached: boolean;
 }
 
+// CampaignCreated event type
+export interface CampaignCreatedEvent {
+  campaignId: bigint;
+  creator: string;
+  goal: bigint;
+  deadline: bigint;
+  blockNumber: bigint;
+  transactionHash: string;
+}
+
 // Create viem client
 const publicClient = createPublicClient({
   chain: sepolia,
@@ -174,5 +184,40 @@ export async function createCampaign(
       throw new Error(`Failed to create campaign: ${error.message}`);
     }
     throw new Error("Failed to create campaign: Unknown error");
+  }
+}
+
+/**
+ * Fetch all CampaignCreated events from the contract
+ * @param fromBlock - Starting block number (optional, defaults to contract deployment block)
+ * @param toBlock - Ending block number (optional, defaults to 'latest')
+ * @returns Promise<CampaignCreatedEvent[]> - Array of CampaignCreated events
+ */
+export async function getCampaignCreatedEvents(
+  fromBlock?: bigint,
+  toBlock?: bigint | "latest"
+): Promise<CampaignCreatedEvent[]> {
+  try {
+    const logs = await publicClient.getContractEvents({
+      address: CONTRACT_ADDRESS,
+      abi: CROWDFUNDING_ABI,
+      eventName: "CampaignCreated",
+      fromBlock: fromBlock || 0n,
+      toBlock: toBlock || "latest",
+    });
+
+    return logs.map((log) => ({
+      campaignId: log.args.campaignId as bigint,
+      creator: log.args.creator as string,
+      goal: log.args.goal as bigint,
+      deadline: log.args.deadline as bigint,
+      blockNumber: log.blockNumber,
+      transactionHash: log.transactionHash,
+    }));
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`Failed to fetch CampaignCreated events: ${error.message}`);
+    }
+    throw new Error("Failed to fetch CampaignCreated events: Unknown error");
   }
 }

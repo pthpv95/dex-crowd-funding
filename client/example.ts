@@ -4,6 +4,7 @@ import {
   getCampaignCount,
   getAllDonors,
   createCampaign,
+  getCampaignCreatedEvents,
 } from "./index.js";
 
 async function example() {
@@ -74,4 +75,31 @@ async function getCampaignById(campaignId: number) {
   console.log("Goal reached:", goalReached);
 }
 
-getCampaignById(0);
+// getCampaignById(0);
+
+async function fetchCampaignCreatedEvents() {
+  try {
+    console.log("Fetching CampaignCreated events...\n");
+
+    // Fetch all CampaignCreated events
+    const events = await getCampaignCreatedEvents();
+
+    console.log(`Found ${events.length} CampaignCreated events:\n`);
+
+    events.forEach((event, index) => {
+      console.log(`Event ${index + 1}:`);
+      console.log(`  Campaign ID: ${event.campaignId}`);
+      console.log(`  Creator: ${event.creator}`);
+      console.log(`  Goal: ${formatEther(event.goal)} ETH`);
+      console.log(`  Deadline: ${new Date(Number(event.deadline) * 1000).toISOString()}`);
+      console.log(`  Block Number: ${event.blockNumber}`);
+      console.log(`  Transaction Hash: ${event.transactionHash}`);
+      console.log("");
+    });
+  } catch (error) {
+    console.error("Error fetching CampaignCreated events:", error);
+  }
+}
+
+// Run the function
+fetchCampaignCreatedEvents();
