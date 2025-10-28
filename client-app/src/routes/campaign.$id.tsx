@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useGetCampaign, useDonate, useGetDonors } from "@/hooks";
-import { useAccount } from "wagmi";
+import { useAccount, useBalance } from "wagmi";
 import { useState } from "react";
 
 export const Route = createFileRoute("/campaign/$id")({
@@ -13,6 +13,7 @@ function CampaignDetailsPage() {
   const { data: campaign, isLoading, refetch } = useGetCampaign(campaignId);
   const { donors } = useGetDonors(campaignId);
   const { address } = useAccount();
+  const { data: balance } = useBalance({ address });
   const { donate, isPending } = useDonate();
   const router = useRouter();
 
@@ -191,12 +192,22 @@ function CampaignDetailsPage() {
                   ) : (
                     <form onSubmit={handleDonate} className="space-y-4">
                       <div>
-                        <label
-                          htmlFor="amount"
-                          className="block text-sm font-medium text-gray-700 mb-2"
-                        >
-                          Donation Amount (ETH)
-                        </label>
+                        <div className="flex items-center justify-between mb-2">
+                          <label
+                            htmlFor="amount"
+                            className="block text-sm font-medium text-gray-700"
+                          >
+                            Donation Amount (ETH)
+                          </label>
+                          {balance && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="text-gray-500">Your Balance:</span>
+                              <span className="font-semibold text-gray-700">
+                                {parseFloat(balance.formatted).toFixed(4)} {balance.symbol}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                         <input
                           type="number"
                           id="amount"

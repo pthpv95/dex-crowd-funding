@@ -5,13 +5,15 @@ import { useLogin, useLogout, useProfile } from "../hooks/auth";
 export default function Header() {
   const { address } = useAccount();
   const { connectors, connectAsync } = useConnect();
+  const metamaskConnector = connectors.find(
+    (connector) => connector.name === "MetaMask"
+  );
   const { disconnect } = useDisconnect();
   const { signMessageAsync } = useSignMessage();
 
   // TanStack Query hooks
-  const { data: profileData, isLoading: isLoadingProfile } = useProfile(
-    !!address,
-  );
+  const { data: profileData, isLoading: isLoadingProfile } =
+    useProfile(!!address);
   const loginMutation = useLogin();
   const logoutMutation = useLogout();
 
@@ -113,18 +115,20 @@ export default function Header() {
               </div>
             ) : (
               <div className="flex gap-2">
-                {connectors.map((connector) => (
+                {metamaskConnector && (
                   <button
-                    key={connector.uid}
+                    key={metamaskConnector.uid}
                     onClick={async () => {
-                      const result = await connectAsync({ connector });
+                      const result = await connectAsync({
+                        connector: metamaskConnector,
+                      });
                       handleVerifyMessage(result.accounts[0]);
                     }}
                     className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors"
                   >
                     Connect Wallet
                   </button>
-                ))}
+                )}
               </div>
             )}
           </div>
