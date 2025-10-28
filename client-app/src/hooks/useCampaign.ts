@@ -1,4 +1,5 @@
 import { abis, CROWDFUNDING_CONTRACT_ADDRESS } from "@/config";
+import { formatDateTime } from "@/utils";
 import { formatEther, parseEther } from "viem";
 import { useAccount, useReadContract, useWriteContract } from "wagmi";
 
@@ -22,13 +23,12 @@ export const useCreateCampaign = () => {
       throw new Error("No account connected");
     }
     const goalInWei = parseEther(goal.toString());
-    const durationInDaysInWei = parseEther(durationInDays.toString());
 
     const campaignId = await writeContractAsync({
       address: CROWDFUNDING_CONTRACT_ADDRESS,
       abi: abis.CROWDFUNDING,
       functionName: "createCampaign",
-      args: [goalInWei, durationInDaysInWei],
+      args: [goalInWei, BigInt(durationInDays)],
     });
     return campaignId;
   };
@@ -63,7 +63,7 @@ export const useGetCampaign = (id: number) => {
         return {
           creator: result[0],
           goal: formatEther(result[1]),
-          deadline: new Date(Number(result[2]) * 1000).toISOString(),
+          deadline: formatDateTime(Number(result[2]) * 1000),
           amountRaised: formatEther(result[3]),
           withdrawn: result[4],
           isActive: result[5],

@@ -2,6 +2,7 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useGetCampaign, useDonate, useGetDonors } from "@/hooks";
 import { useAccount, useBalance } from "wagmi";
 import { useState } from "react";
+import { formatDateShort } from "@/utils";
 
 export const Route = createFileRoute("/campaign/$id")({
   component: CampaignDetailsPage,
@@ -285,7 +286,7 @@ function CampaignDetailsPage() {
                   <div className="flex justify-between py-2 border-b">
                     <span className="text-gray-600">Deadline</span>
                     <span className="font-semibold">
-                      {new Date(campaign.deadline).toLocaleDateString()}
+                      {formatDateShort(campaign.deadline)}
                     </span>
                   </div>
                   <div className="flex justify-between py-2 border-b">
