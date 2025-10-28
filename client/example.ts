@@ -91,7 +91,7 @@ async function fetchCampaignCreatedEvents() {
       console.log(`  Campaign ID: ${event.campaignId}`);
       console.log(`  Creator: ${event.creator}`);
       console.log(`  Goal: ${formatEther(event.goal)} ETH`);
-      console.log(`  Deadline: ${new Date(Number(event.deadline) * 1000).toISOString()}`);
+      // console.log(`  Deadline: ${new Date(Number(event.deadline) * 1000).toISOString()}`);
       console.log(`  Block Number: ${event.blockNumber}`);
       console.log(`  Transaction Hash: ${event.transactionHash}`);
       console.log("");

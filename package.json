@@ -10,6 +10,7 @@
   "scripts": {
     "build": "tsc",
     "start:fe": "cd client-app && npm run dev",
+    "start:be": "cd be && npm run start:dev",
     "dev": "tsc && node dist/index.js"
   },
   "dependencies": {

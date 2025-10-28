@@ -1,12 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useGetCampaignCount, useGetCampaign } from "@/hooks";
-import CampaignCard from "@/components/CampaignCard";
+import { useGetCampaignsFromApi } from "@/hooks";
 import { useAccount, useConnect } from "wagmi";
+import CampaignCard from "@/components/CampaignCard";
 
 export const Route = createFileRoute("/")({ component: HomePage });
 
 function HomePage() {
-  const { count, isLoading } = useGetCampaignCount();
+  const { data: campaigns = [], isLoading } = useGetCampaignsFromApi();
   const { address } = useAccount();
   const { connectors, connect } = useConnect();
 
@@ -54,7 +54,7 @@ function HomePage() {
               Active Campaigns
             </h2>
             <p className="text-gray-600 mt-2">
-              {isLoading ? "Loading..." : `${count} campaigns`}
+              {isLoading ? "Loading..." : `${campaigns.length} campaigns`}
             </p>
           </div>
         </div>
@@ -75,10 +75,10 @@ function HomePage() {
               </div>
             ))}
           </div>
-        ) : count > 0 ? (
+        ) : campaigns.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: count }, (_, i) => (
-              <CampaignItem key={i} id={i} />
+            {campaigns.map((campaign) => (
+              <CampaignCard key={campaign.id} campaign={campaign} />
             ))}
           </div>
         ) : (
@@ -99,23 +99,4 @@ function HomePage() {
       </div>
     </div>
   );
-}
-
-function CampaignItem({ id }: { id: number }) {
-  const { data: campaign, isLoading } = useGetCampaign(id);
-
-  if (isLoading || !campaign) {
-    return (
-      <div className="bg-white rounded-lg shadow-md h-96 animate-pulse">
-        <div className="h-48 bg-gray-300" />
-        <div className="p-5 space-y-3">
-          <div className="h-6 bg-gray-300 rounded" />
-          <div className="h-4 bg-gray-300 rounded w-2/3" />
-          <div className="h-2 bg-gray-300 rounded" />
-        </div>
-      </div>
-    );
-  }
-
-  return <CampaignCard id={id} campaign={campaign} />;
 }

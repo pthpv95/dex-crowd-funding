@@ -1,8 +1,10 @@
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useGetCampaign, useDonate, useGetDonors } from "@/hooks";
+import { useGetCampaignFromApi } from "@/hooks/useCampaignsApi";
 import { useAccount, useBalance } from "wagmi";
 import { useState } from "react";
 import { formatDateShort } from "@/utils";
+import { formatEther } from "viem";
 
 export const Route = createFileRoute("/campaign/$id")({
   component: CampaignDetailsPage,
@@ -10,19 +12,30 @@ export const Route = createFileRoute("/campaign/$id")({
 
 function CampaignDetailsPage() {
   const { id } = Route.useParams();
-  const campaignId = parseInt(id);
-  const { data: campaign, isLoading, refetch } = useGetCampaign(campaignId);
-  const { donors } = useGetDonors(campaignId);
+
+  // Fetch campaign from backend API
+  const {
+    data: campaign,
+    isLoading: isLoadingApi,
+    refetch: refetchApi,
+  } = useGetCampaignFromApi(id);
+
+  // Fetch blockchain data for onChainId if available
+  const onChainId = campaign?.onChainId
+    ? parseInt(campaign.onChainId)
+    : undefined;
+  const { data: blockchainData } = useGetCampaign(onChainId || 0);
+  const { donors } = useGetDonors(onChainId || 0);
+
   const { address } = useAccount();
   const { data: balance } = useBalance({ address });
   const { donate, isPending } = useDonate();
-  const router = useRouter();
 
   const [donationAmount, setDonationAmount] = useState("");
   const [donationError, setDonationError] = useState("");
   const [donationSuccess, setDonationSuccess] = useState(false);
 
-  if (isLoading || !campaign) {
+  if (isLoadingApi || !campaign) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="container mx-auto px-4">
@@ -39,8 +52,12 @@ function CampaignDetailsPage() {
     );
   }
 
-  const progressPercentage =
-    (parseFloat(campaign.amountRaised) / parseFloat(campaign.goal)) * 100;
+  // Get amount raised from blockchain data or default to 0
+  const amountRaised = blockchainData?.amountRaised || "0";
+  const goalInEther = formatEther(BigInt(campaign.goal));
+  const raisedInEther = parseFloat(amountRaised);
+
+  const progressPercentage = (raisedInEther / parseFloat(goalInEther)) * 100;
 
   const daysLeft = Math.ceil(
     (new Date(campaign.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
@@ -63,13 +80,18 @@ function CampaignDetailsPage() {
       return;
     }
 
+    if (!onChainId) {
+      setDonationError("Campaign not yet deployed on blockchain");
+      return;
+    }
+
     try {
-      await donate(campaignId, parseFloat(donationAmount));
+      await donate(onChainId, parseFloat(donationAmount));
       setDonationSuccess(true);
       setDonationAmount("");
       // Refetch campaign data after successful donation
       setTimeout(() => {
-        refetch();
+        refetchApi();
       }, 2000);
     } catch (error: any) {
       setDonationError(error.message || "Failed to donate");
@@ -103,7 +125,9 @@ function CampaignDetailsPage() {
               {/* Creator Info */}
               <div className="mb-6">
                 <p className="text-sm text-gray-500 mb-1">Created by</p>
-                <p className="font-mono text-gray-700">{campaign.creator}</p>
+                <p className="font-mono text-gray-700">
+                  {campaign.creator.walletAddress}
+                </p>
               </div>
 
               {/* Progress */}
@@ -111,10 +135,10 @@ function CampaignDetailsPage() {
                 <div className="flex justify-between items-end mb-2">
                   <div>
                     <p className="text-4xl font-bold text-gray-800">
-                      {parseFloat(campaign.amountRaised).toFixed(4)} ETH
+                      {raisedInEther.toFixed(4)} ETH
                     </p>
                     <p className="text-gray-600">
-                      raised of {parseFloat(campaign.goal).toFixed(4)} ETH goal
+                      raised of {parseFloat(goalInEther).toFixed(4)} ETH goal
                     </p>
                   </div>
                   <div className="text-right">
@@ -155,7 +179,7 @@ function CampaignDetailsPage() {
 
               {/* Status Tags */}
               <div className="flex gap-2 flex-wrap mb-8">
-                {campaign.goalReached && (
+                {campaign.isGoalReached && (
                   <span className="px-4 py-2 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
                     ✓ Goal Reached
                   </span>
@@ -165,7 +189,7 @@ function CampaignDetailsPage() {
                     Inactive
                   </span>
                 )}
-                {campaign.withdrawn && (
+                {campaign.isWithdrawn && (
                   <span className="px-4 py-2 bg-yellow-100 text-yellow-700 rounded-full text-sm font-semibold">
                     Funds Withdrawn
                   </span>
@@ -202,9 +226,12 @@ function CampaignDetailsPage() {
                           </label>
                           {balance && (
                             <div className="flex items-center gap-2 text-sm">
-                              <span className="text-gray-500">Your Balance:</span>
+                              <span className="text-gray-500">
+                                Your Balance:
+                              </span>
                               <span className="font-semibold text-gray-700">
-                                {parseFloat(balance.formatted).toFixed(4)} {balance.symbol}
+                                {parseFloat(balance.formatted).toFixed(4)}{" "}
+                                {balance.symbol}
                               </span>
                             </div>
                           )}
@@ -271,16 +298,22 @@ function CampaignDetailsPage() {
                     <span className="text-gray-600">Campaign ID</span>
                     <span className="font-semibold">{id}</span>
                   </div>
+                  {onChainId && (
+                    <div className="flex justify-between py-2 border-b">
+                      <span className="text-gray-600">Blockchain ID</span>
+                      <span className="font-semibold">{onChainId}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between py-2 border-b">
                     <span className="text-gray-600">Goal Amount</span>
                     <span className="font-semibold">
-                      {parseFloat(campaign.goal).toFixed(4)} ETH
+                      {parseFloat(goalInEther).toFixed(4)} ETH
                     </span>
                   </div>
                   <div className="flex justify-between py-2 border-b">
                     <span className="text-gray-600">Amount Raised</span>
                     <span className="font-semibold">
-                      {parseFloat(campaign.amountRaised).toFixed(4)} ETH
+                      {raisedInEther.toFixed(4)} ETH
                     </span>
                   </div>
                   <div className="flex justify-between py-2 border-b">

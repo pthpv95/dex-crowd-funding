@@ -1,18 +1,8 @@
 import { abis, CROWDFUNDING_CONTRACT_ADDRESS } from "@/config";
+import { CampaignDataContract } from "@/types/campaign";
 import { formatDateTime } from "@/utils";
 import { formatEther, parseEther } from "viem";
 import { useAccount, useReadContract, useWriteContract } from "wagmi";
-
-// Campaign data type
-export interface CampaignData {
-  creator: string;
-  goal: string;
-  deadline: string;
-  amountRaised: string;
-  withdrawn: boolean;
-  isActive: boolean;
-  goalReached: boolean;
-}
 
 export const useCreateCampaign = () => {
   const { address } = useAccount();
@@ -49,7 +39,7 @@ export const useGetCampaign = (id: number) => {
     args: [id],
   });
 
-  const data: CampaignData | undefined = rawData
+  const data: CampaignDataContract | undefined = rawData
     ? (() => {
         const result = rawData as [
           string,

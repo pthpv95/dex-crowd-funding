@@ -1,41 +1,59 @@
 import { Link } from "@tanstack/react-router";
-import { CampaignData } from "@/hooks";
+import { CampaignResponse } from "@/types/campaign";
+import { formatEther } from "viem";
 
 interface CampaignCardProps {
-  id: number;
-  campaign: CampaignData;
+  campaign: CampaignResponse;
+  // Optional: amountRaised from blockchain if available (in wei)
+  amountRaised?: string;
 }
 
-const CampaignCard = ({ id, campaign }: CampaignCardProps) => {
-  const progressPercentage =
-    (parseFloat(campaign.amountRaised) / parseFloat(campaign.goal)) * 100;
+const CampaignCard = ({ campaign, amountRaised }: CampaignCardProps) => {
+  // Extract data from campaign
+  const creatorAddress = campaign.creator.walletAddress;
+  const goalInEther = formatEther(BigInt(campaign.goal));
 
-  const daysLeft = Math.ceil(
-    (new Date(campaign.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+  // Use amountRaised if provided, otherwise assume 0
+  const raisedInEther = amountRaised ? formatEther(BigInt(amountRaised)) : "0";
+
+  // Calculate progress percentage
+  const progressPercentage = amountRaised
+    ? (Number(formatEther(BigInt(amountRaised))) / Number(goalInEther)) * 100
+    : 0;
+
+  // Calculate days left
+  const deadlineDate = new Date(campaign.deadline);
+  const now = new Date();
+  const daysLeft = Math.max(
+    0,
+    Math.ceil((deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
   );
+  const isExpired = daysLeft === 0 || deadlineDate < now;
 
-  const isExpired = daysLeft < 0;
+  // Use the title from description (first line or truncate)
+  const title =
+    campaign.description.split("\n")[0] || campaign.description.slice(0, 50);
 
   return (
     <Link
       to="/campaign/$id"
-      params={{ id: id.toString() }}
+      params={{ id: campaign.id }}
       className="block bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow overflow-hidden"
     >
       {/* Placeholder Image */}
       <div className="h-48 bg-linear-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-2xl font-bold">
-        Campaign #{id}
+        Campaign
       </div>
 
       <div className="p-5">
         {/* Title */}
         <h3 className="text-xl font-bold text-gray-800 mb-2 line-clamp-2">
-          Campaign #{id}
+          {title}
         </h3>
 
         {/* Creator */}
         <p className="text-sm text-gray-500 mb-4">
-          By {campaign.creator.slice(0, 6)}...{campaign.creator.slice(-4)}
+          By {creatorAddress.slice(0, 6)}...{creatorAddress.slice(-4)}
         </p>
 
         {/* Progress Bar */}
@@ -54,17 +72,17 @@ const CampaignCard = ({ id, campaign }: CampaignCardProps) => {
         <div className="flex justify-between items-center mb-2">
           <div>
             <p className="text-2xl font-bold text-gray-800">
-              {parseFloat(campaign.amountRaised).toFixed(4)} ETH
+              {Number(raisedInEther).toFixed(4)} ETH
             </p>
             <p className="text-sm text-gray-500">
-              raised of {parseFloat(campaign.goal).toFixed(4)} ETH goal
+              raised of {Number(goalInEther).toFixed(4)} ETH goal
             </p>
           </div>
         </div>
 
         {/* Status Tags */}
         <div className="flex gap-2 flex-wrap mt-3">
-          {campaign.goalReached && (
+          {campaign.isGoalReached && (
             <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
               ✓ Goal Reached
             </span>
@@ -83,7 +101,7 @@ const CampaignCard = ({ id, campaign }: CampaignCardProps) => {
               Inactive
             </span>
           )}
-          {campaign.withdrawn && (
+          {campaign.isWithdrawn && (
             <span className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold">
               Withdrawn
             </span>
