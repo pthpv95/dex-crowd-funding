@@ -10,6 +10,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import type { Response } from 'express';
+import type { AuthorizedRequest } from './types/authorized-request.type';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -24,7 +25,10 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) response: Response) {
+  async login(
+    @Body() loginDto: LoginDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
     const result = await this.authService.login(loginDto);
 
     // Set httpOnly cookie with access token
@@ -43,14 +47,14 @@ export class AuthController {
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  async logout(@Res({ passthrough: true }) response: Response) {
+  logout(@Res({ passthrough: true }) response: Response) {
     response.clearCookie('access_token');
     return { message: 'Logout successful' };
   }
 
   @Get('profile')
   @UseGuards(JwtAuthGuard)
-  async getProfile(@Request() req) {
+  getProfile(@Request() req: AuthorizedRequest) {
     return {
       user: {
         id: req.user.id,
@@ -63,7 +67,10 @@ export class AuthController {
   @Post('refresh')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  async refresh(@Request() req, @Res({ passthrough: true }) response: Response) {
+  async refresh(
+    @Request() req: AuthorizedRequest,
+    @Res({ passthrough: true }) response: Response,
+  ) {
     // User is already authenticated via JWT guard
     const result = await this.authService.login({
       walletAddress: req.user.walletAddress,

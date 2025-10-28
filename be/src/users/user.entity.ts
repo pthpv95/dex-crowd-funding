@@ -14,9 +14,6 @@ export class User {
   @Column({ unique: true, length: 42 })
   walletAddress: string;
 
-  @Column({ nullable: true })
-  nonce: string;
-
   @CreateDateColumn()
   createdAt: Date;
 

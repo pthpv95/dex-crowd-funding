@@ -60,7 +60,10 @@ export class AuthService {
     };
   }
 
-  private validateMessageFormat(message: string, walletAddress: string): boolean {
+  private validateMessageFormat(
+    message: string,
+    walletAddress: string,
+  ): boolean {
     // Expected format from frontend:
     // Welcome to CrowdFund!\n\nPlease sign this message to verify your wallet ownership.\n\nWallet: {address}\nTimestamp: {timestamp}
     const expectedPrefix = 'Welcome to CrowdFund!';
