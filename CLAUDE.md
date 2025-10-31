@@ -31,6 +31,10 @@ npm run upgrade             # Upgrade to new implementation
 npm run node                # Start local Hardhat node
 npx hardhat test           # Alternative test command
 ```
+```
+CONTRACT_ADDRESS = "0xA38cF6B5C5D47cF31aB5d0eA399EBb1132B0f5a3"
+RPC_URL = "https://sepolia.infura.io/v3/b652a129ff3e4018827f52f0eaa6dc77";
+```
 
 ### Backend (be/)
 ```bash

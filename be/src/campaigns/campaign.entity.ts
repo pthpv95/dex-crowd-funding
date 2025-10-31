@@ -14,14 +14,17 @@ export class Campaign {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'uuid' })
+  @Column({ type: 'uuid', nullable: true })
   creatorId: string;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'creatorId' })
   creator: User;
 
-  @Column({ type: 'text' })
+  @Column({ type: 'varchar', length: 42, nullable: true })
+  creatorAddress: string; // Blockchain wallet address
+
+  @Column({ type: 'text', nullable: true })
   description: string;
 
   @Column({ type: 'decimal', precision: 20, scale: 0 })
@@ -45,6 +48,9 @@ export class Campaign {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @Column({ type: 'varchar', nullable: true })
-  onChainId: string;
+  @Column({ type: 'varchar', nullable: true, unique: true })
+  onChainId: string; // Campaign ID from blockchain
+
+  @Column({ type: 'decimal', precision: 20, scale: 0, default: '0' })
+  amountRaised: string; // Total amount raised in wei
 }
